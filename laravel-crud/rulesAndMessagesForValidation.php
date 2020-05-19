@@ -11,5 +11,6 @@ $messages = array(
     //This rule will validate data coming from form
     $rules = array(
         'name' => 'required|min:3',
-        'description' => 'required'
+        'description' => 'required',
+        'photo' => 'required|image|mimes:jpeg,png,jpg,gif,svg',
     );

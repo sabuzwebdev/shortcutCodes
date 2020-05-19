@@ -47,16 +47,29 @@ class UserController extends Controller
                 return redirect()->back()->withInput()->withErrors($validator);
             }
 
+
+
+            // if we have image -single image upload
+            if ($request->has('photo')) {
+                $imageName = time().'.'.$request->photo->extension();  
+   
+                $request->photo->move(public_path('images'), $imageName);
+                // Set user profile image path in database to filePath
+                
+            }
+
            
+            $post = new Post();
+            $post->title = $request->title;
+            $post->category_id = $request->category_id;
+            $post->description = $request->description;
+            $post->photo = $imageName;
+            $post->save();
+            alert()->success('Post created'); // sweet alert externel package
 
-            $user = new User();
-            $user->name = $request->name;
-            $user->email = $request->email;
-            $user->password = bcrypt('sabuz123');
-            $user->save();
-            alert()->success('User Created');
+            return redirect()->route('posts.index');
+            //return redirect()->route('categories.index')->with('message',"Post Created"); // this line will work for normal session
 
-            return redirect()->route('users.index');
 
         }catch(\Exception $e){
             return $e->getMessage();

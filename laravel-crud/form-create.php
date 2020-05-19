@@ -1,4 +1,8 @@
 
+      <?php
+
+      // if we want to upload image then form must have enctype attribute
+      
       <form action="{{ route('posts.store') }}" method="post" enctype="multipart/form-data">
         @csrf
         

@@ -1,6 +1,6 @@
 <?php
 
-// success message
+// Success Session message
 
 @if(Session::get('message'))
     <div class="alert alert-success">
@@ -10,7 +10,7 @@
 @endif
 
 
-// Error message
+// Error Session message
 
 @if(Session::get('error'))
     <div class="alert alert-danger">

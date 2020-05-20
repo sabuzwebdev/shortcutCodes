@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Manager;
+namespace App\Http\Controllers;
 
-use App\User;
+use App\Post;
+use App\Category;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
-class UserController extends Controller
+class PostController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -16,8 +17,8 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::all(); 
-        return view('user.index',compact('users'));
+        $posts = Post::orderBy('id','desc')->paginate(10);
+        return view('post.index',compact('posts'));
     }
 
     /**
@@ -27,7 +28,8 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('user.create');
+        $categories = Category::all();
+        return view('post.create',compact('categories'));
     }
 
     /**
@@ -38,7 +40,8 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-              
+
+        //dd($request->all());
         try{
             $message = [];
             $rules = [];
@@ -47,9 +50,84 @@ class UserController extends Controller
                 return redirect()->back()->withInput()->withErrors($validator);
             }
 
+            if ($request->has('photo')) {
+                $imageName = time().'.'.$request->photo->extension();  
+   
+                $request->photo->move(public_path('images'), $imageName);
+                // Set user profile image path in database to filePath
+                
+            }
 
+            Post::create([
+                'category_id' => $request->category_id,
+                'title' => $request->title,
+                'description' => $request->description,
+                'photo' => $imageName,
+            ]);
+            alert()->success('Post Created');
 
-            // if we have image -single image upload
+            return redirect()->route('posts.index');
+
+        }catch(\Exception $e){
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\Post  $post
+     * @return \Illuminate\Http\Response
+     */
+    public function show(Post $post)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  \App\Post  $post
+     * @return \Illuminate\Http\Response
+     */
+    public function edit(Post $post)
+    {
+        $categories = Category::all();
+        return view('post.edit',compact('post','categories'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Post  $post
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, Post $post)
+    {
+        try{
+            $message = [
+                'title.required' => 'Post title  is required',
+                
+                'description.required' => 'Post Description  is required',
+                'photo.required' => 'Please put an image',
+                'photo.mimes' => 'This is not an image',
+                
+                
+                
+            ];
+            $rules = [
+                'title' => 'required',
+                'description' => 'required',
+                'photo' => 'required|image|mimes:jpeg,png,jpg,gif,svg',
+                
+               
+            ];
+            $validator = Validator::make($request->all(), $rules, $message);
+            if ($validator->fails()) {
+                return redirect()->back()->withInput()->withErrors($validator);
+            }
+
             if ($request->has('photo')) {
                 $imageName = time().'.'.$request->photo->extension();  
    
@@ -59,95 +137,33 @@ class UserController extends Controller
             }
 
            
-            $post = new Post();
+
             $post->title = $request->title;
             $post->category_id = $request->category_id;
             $post->description = $request->description;
             $post->photo = $imageName;
             $post->save();
-            alert()->success('Post created'); // sweet alert externel package
+            alert()->success('Post updated');
 
             return redirect()->route('posts.index');
-            //return redirect()->route('categories.index')->with('message',"Post Created"); // this line will work for normal session
-
 
         }catch(\Exception $e){
             return $e->getMessage();
         }
-
-
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        $user = User::findOrFail($id);
-        
-        return view('user.edit', compact('user'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-       
-        try{
-            $message = [];
-            $rules = [];
-            $validator = Validator::make($request->all(), $rules, $message);
-            if ($validator->fails()) {
-                return redirect()->back()->withInput()->withErrors($validator);
-            }
-
-           
-
-            $user = User::findOrFail($id);
-            $user->name = $request->name;
-            $user->email = $request->email;
-            $user->save();
-            alert()->success('User Updated');
-
-            return redirect()->route('users.index');
-
-        }catch(\Exception $e){
-            return $e->getMessage();
-        }
-        
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param  \App\Post  $post
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Post $post)
     {
-        $user = User::findOrFail($id);
-        $user->delete();
-        alert()->success('User Delete');
-        return redirect()->route('users.index');
+        unlink(public_path() . '/images/'. $post->photo);
+        $post->delete();
+        alert()->success('Post Deleted');
 
+        return redirect()->route('posts.index');
     }
 }
